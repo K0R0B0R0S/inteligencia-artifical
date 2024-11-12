@@ -9,6 +9,8 @@ class TwoJarsState:
     """
     This class represents a configuration of the two jars.
     """
+    maxJ3 = 3
+    maxJ4 = 4
 
     def __init__( self, volumes ):
         """
@@ -19,8 +21,8 @@ class TwoJarsState:
          - The second position stores the amount of water in the second jar (with capacity 3l).
         """
         self.jars = {"J4": volumes[0], "J3": volumes[1]}
-        assert (self.jars["J4"] >= 0 and self.jars["J4"] <= 4)
-        assert (self.jars["J3"] >= 0 and self.jars["J3"] <= 3)
+        assert 0 <= self.jars["J4"] <= self.maxJ4
+        assert 0 <= self.jars["J3"] <= self.maxJ3
 
     def isGoal( self ):
         """
@@ -40,7 +42,7 @@ class TwoJarsState:
         False
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.jars.get('J4') == 2
 
     def legalMoves( self ):
         """
@@ -61,7 +63,24 @@ class TwoJarsState:
         ['fillJ4', 'pourJ3intoJ4', 'emptyJ3', 'emptyJ4']
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        moves = []
+        j4 = self.jars["J4"]
+        j3 = self.jars["J3"]
+        
+        if j3 < self.maxJ3:
+            moves.append('fillJ3')
+        if j4 < self.maxJ4:
+            moves.append('fillJ4')
+        if j3 > 0 and j4 < 4:
+            moves.append('pourJ3intoJ4')
+        if j4 > 0 and j3 < self.maxJ3:
+            moves.append('pourJ4intoJ3')
+        if j3 > 0:
+            moves.append('emptyJ3')
+        if j4 > 0:
+            moves.append('emptyJ4')
+        
+        return moves
 
     def result(self, move):
         """
@@ -75,7 +94,33 @@ class TwoJarsState:
         it returns a new object.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        j4 = self.jars["J4"]
+        j3 = self.jars["J3"]
+
+        if move == 'fillJ3':
+            new_j3 = self.maxJ3
+            new_j4 = j4
+        elif move == 'fillJ4':
+            new_j3 = j3
+            new_j4 = self.maxJ4
+        elif move == 'pourJ3intoJ4':
+            pour_amount = min(j3, self.maxJ4 - j4)
+            new_j3 = j3 - pour_amount
+            new_j4 = j4 + pour_amount
+        elif move == 'pourJ4intoJ3':
+            pour_amount = min(j4, self.maxJ3 - j3)
+            new_j3 = j3 + pour_amount
+            new_j4 = j4 - pour_amount
+        elif move == 'emptyJ3':
+            new_j3 = 0
+            new_j4 = j4
+        elif move == 'emptyJ4':
+            new_j3 = j3
+            new_j4 = 0
+        else:
+            raise ValueError(f"Movimento Inválido: {move}")
+
+        return TwoJarsState((new_j4, new_j3))
 
     # Utilities for comparison and display
     def __eq__(self, other):
@@ -87,7 +132,7 @@ class TwoJarsState:
           True
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.jars['J4'] == other.jars['J4'] and self.jars['J3'] == other.jars['J3']
 
     def __hash__(self):
         return hash(str(self.jars))
@@ -96,8 +141,21 @@ class TwoJarsState:
         """
           Returns a display string for the maze
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        j4 = self.jars["J4"]
+        j3 = self.jars["J3"]
+        
+        j4_levels = ["|###|" if i < j4 else "|   |" for i in range(self.maxJ4 - 1, -1, -1)]
+        j3_levels = ["|###|" if i < j3 else "|   |" for i in range(self.maxJ3 - 1, -1, -1)]
+        
+        if self.maxJ4 > self.maxJ3:
+            j3_levels = ["     "] * (self.maxJ4 - self.maxJ3) + j3_levels
+        elif self.maxJ3 > self.maxJ4:
+            j4_levels = ["     "] * (self.maxJ3 - self.maxJ4) + j4_levels
+        
+        display = " J4      J3\n"
+        display += "\n".join(f"{j4_line}   {j3_line}" for j4_line, j3_line in zip(j4_levels, j3_levels))
+        
+        return display
 
     def __str__(self):
         return self.__getAsciiString()
@@ -161,8 +219,9 @@ def createRandomTwoJarsState(moves=10):
       Creates a random state by applying a series 
       of 'moves' random moves to a solved state.
     """
-    volume_of_J3 = randint(0, 3)
-    a_state = TwoJarsState((2,volume_of_J3))
+    volume_of_J3 = randint(0, TwoJarsState.maxJ3)
+    volume_of_J4 = randint(0, TwoJarsState.maxJ4)
+    a_state = TwoJarsState((volume_of_J4, volume_of_J3))
     for i in range(moves):
         # Execute a random legal move
         a_state = a_state.result(random.sample(a_state.legalMoves(), 1)[0])

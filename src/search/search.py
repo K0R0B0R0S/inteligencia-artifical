@@ -88,6 +88,26 @@ class SearchProblem:
         """
         util.raiseNotDefined()
 
+    def getStartNode(self):
+        """Inicializa o nó inicial para o problema de busca."""
+        return {'STATE': self.getStartState(), 'PATH-COST': 0}
+
+    def getActionSequence(self, node):
+        """Obtém a sequência de ações do estado inicial até o nó atual."""
+        actions = []
+        while node['PATH-COST'] > 0:
+            actions.insert(0, node['ACTION'])
+            node = node['PARENT']
+        return actions
+
+    def getChildNode(self, successor, parent_node):
+        """Gera um nó filho a partir de um sucessor e do nó pai."""
+        return {
+            'STATE': successor[0],
+            'PARENT': parent_node,
+            'ACTION': successor[1],
+            'PATH-COST': parent_node['PATH-COST'] + successor[2]
+        }
 
 def tinyMazeSearch(problem):
     """
@@ -99,7 +119,7 @@ def tinyMazeSearch(problem):
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
-def depthFirstSearch(problem):
+def depthFirstSearch(problem: SearchProblem):
     """
     Search the deepest nodes in the search tree first.
 
@@ -113,12 +133,53 @@ def depthFirstSearch(problem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    node = problem.getStartNode()
+    frontier = util.Stack()
+    frontier.push(node)
 
-def breadthFirstSearch(problem):
+    explored = set()
+
+    while not frontier.isEmpty():
+        node = frontier.pop()
+        
+        if node['STATE'] in explored:
+            continue
+
+        explored.add(node['STATE'])
+
+        if problem.isGoalState(node['STATE']):
+            return problem.getActionSequence(node)
+        
+        for successor in problem.expand(node['STATE']):
+            child_node = problem.getChildNode(successor, node)
+            frontier.push(child_node)
+
+    return []
+
+def breadthFirstSearch(problem: SearchProblem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    node = problem.getStartNode()
+    frontier = util.Queue()
+    frontier.push(node)
+    explored = set()
+
+    while not frontier.isEmpty():
+        node = frontier.pop()
+
+        if node['STATE'] in explored:
+            continue
+
+        explored.add(node['STATE'])
+
+        if problem.isGoalState(node['STATE']):
+            return problem.getActionSequence(node)
+        
+        for sucessor in problem.expand(node['STATE']):
+            child_node = problem.getChildNode(sucessor, node)
+            frontier.push(child_node)
+
+    return []
 
 def nullHeuristic(state, problem=None):
     """
@@ -127,13 +188,100 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
-def aStarSearch(problem, heuristic=nullHeuristic):
+def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
 
+    node = problem.getStartNode()
+    fn_total_cost_for_node = lambda a_node: a_node['PATH-COST'] + heuristic(a_node['STATE'], problem=problem)
+    frontier = util.PriorityQueueWithFunction(fn_total_cost_for_node)
+    frontier.push(node)
+
+    explored = set()
+
+    while not frontier.isEmpty():
+        node = frontier.pop()       
+
+        if node['STATE'] in explored:
+            continue        
+
+        explored.add(node['STATE'])
+
+        if problem.isGoalState(node['STATE']): 
+          return problem.getActionSequence(node)
+
+        successors = problem.expand(node['STATE'])
+
+        for sucessor in successors:
+            child_node = problem.getChildNode(sucessor, node)
+            frontier.push(child_node)
+
+    return []
+
+def greedySearch(problem: SearchProblem, heuristic=nullHeuristic):
+    node = problem.getStartNode()
+    fn_total_cost_for_node = lambda a_node: heuristic(a_node['STATE'], problem=problem)
+    frontier = util.PriorityQueueWithFunction(fn_total_cost_for_node)
+    frontier.push(node)
+
+    explored = set()
+
+    while not frontier.isEmpty():
+        node = frontier.pop()       
+
+        if node['STATE'] in explored:
+            continue        
+
+        explored.add(node['STATE'])
+
+        if problem.isGoalState(node['STATE']): 
+          return problem.getActionSequence(node)
+
+        successors = problem.expand(node['STATE'])
+
+        for sucessor in successors:
+            child_node = problem.getChildNode(sucessor, node)
+            frontier.push(child_node)
+
+    return []
+
+def depthLimitedSearch(problem: SearchProblem, limit):
+    node = problem.getStartNode()
+    frontier = util.Stack()
+    frontier.push(node)
+    
+    explored = set()
+
+    while not frontier.isEmpty():
+        node = frontier.pop()
+        if node['STATE'] in explored:
+            continue
+
+        explored.add(node['STATE'])
+
+        if problem.isGoalState(node['STATE']):
+            return problem.getActionSequence(node)
+
+        if node['PATH-COST'] < limit:
+            for successor in problem.expand(node['STATE']):
+                child_node = problem.getChildNode(successor, node)
+                frontier.push(child_node)
+    
+    return None
+
+def iterativeDeepeningSearch(problem: SearchProblem, max_depth = 100):
+    depth = 0
+    while True:
+        if max_depth is not None and depth > max_depth:
+            return []
+        
+        result = depthLimitedSearch(problem, depth)
+        if result is not None:
+            return result
+        depth += 1
 
 # Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
 astar = aStarSearch
+gs = greedySearch
+ids = iterativeDeepeningSearch
