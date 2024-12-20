@@ -182,3 +182,4 @@ src/rl/__pycache__/blackjack_environment.cpython-310.pyc
 *.png
 *.dot
 venv
+teams files/
