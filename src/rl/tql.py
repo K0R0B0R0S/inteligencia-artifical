@@ -48,6 +48,11 @@ class QLearningAgentTabular:
 
     start_time = timer()  # Record the start time
 
+    print()
+    print('===========================================')
+    print('Q-table before training:')
+    print(self.q_table)
+
     for episode in range(num_episodes):
   
       terminated = False
@@ -100,6 +105,11 @@ class QLearningAgentTabular:
         print(f"\tExecution time: {execution_time:.2f}s")
         print(f"\tTotal penalties: {total_penalties}")
         start_time = end_time
+
+    print()
+    print('===========================================')
+    print('Q-table after training:')
+    print(self.q_table)
 
     return rewards_per_episode
 
