@@ -183,3 +183,4 @@ src/rl/__pycache__/blackjack_environment.cpython-310.pyc
 *.dot
 venv
 teams files/
+connect4-mcts/
