@@ -108,8 +108,8 @@ class QLearningAgentTabular:
 
     print()
     print('===========================================')
-    print('Q-table after training:')
-    print(self.q_table)
+    # print('Q-table after training:')
+    # print(self.q_table)
 
     return rewards_per_episode
 

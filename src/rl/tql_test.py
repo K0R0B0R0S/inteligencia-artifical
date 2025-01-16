@@ -1,4 +1,5 @@
 import argparse
+import gymnasium as gym
 from tql import QLearningAgentTabular
 
 if __name__ == "__main__":
@@ -9,12 +10,13 @@ if __name__ == "__main__":
     assert args.num_episodes > 0
 
     agent = QLearningAgentTabular.load_agent(args.env_name + "-tql-agent.pkl")
+    env_test = gym.make(args.env_name, render_mode="human")
 
     total_actions, total_rewards = 0, 0
 
     for episode in range(args.num_episodes):
-
-        state, _ = agent.env.reset()
+        observation, info = env_test.reset()
+        state = observation
         num_actions = 0
         reward = 0
         
@@ -22,8 +24,9 @@ if __name__ == "__main__":
         truncated = False
 
         while not (terminated or truncated):
+            env_test.render() 
             action = agent.choose_action(state, is_in_exploration_mode=False)
-            state, reward, terminated, truncated, info = agent.env.step(action)
+            state, reward, terminated, truncated, info = env_test.step(action)
             num_actions += 1
             total_rewards += reward
 
@@ -33,3 +36,5 @@ if __name__ == "__main__":
     print(f"Average episode length: {total_actions / args.num_episodes}")
     print(f"Average rewards: {total_rewards / args.num_episodes}")
     print("**********************************")
+
+    env_test.close()
