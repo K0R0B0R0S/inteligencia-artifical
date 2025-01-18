@@ -5,10 +5,14 @@ from environment import Environment
 
 from taxi_feature_extractor import TaxiFeatureExtractor
 from blackjack_feature_extractor import BlackjackFeatureExtractor
+from frozenlake_feature_extractor import FrozenLakeFeatureExtractor
+from cliffwalking_feature_extractor import CliffWalkingFeatureExtractor
 
 feature_extractors_dict = {
   "Blackjack-v1": BlackjackFeatureExtractor,
-  "Taxi-v3": TaxiFeatureExtractor
+  "Taxi-v3": TaxiFeatureExtractor,
+  "CliffWalking-v0": CliffWalkingFeatureExtractor,
+  "FrozenLake-v1": FrozenLakeFeatureExtractor
 }
 
 class QLearningAgentLinear:
@@ -43,7 +47,7 @@ class QLearningAgentLinear:
     exploration_tradeoff = np.random.uniform(0, 1)
     if is_in_exploration_mode and exploration_tradeoff < self.epsilon:
       # exploration
-      action = self.env.get_random_action()    
+      action = self.env.get_random_action()
     else:
       action = self.policy(state)
     return action

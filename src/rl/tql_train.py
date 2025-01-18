@@ -8,11 +8,15 @@ from tql import QLearningAgentTabular
 from taxi_environment import TaxiEnvironment
 from blackjack_environment import BlackjackEnvironment
 from cliffwalking_environment import CliffWalkingEnvironment
+from frozenlake_environment import FrozenLakeEnvironment
+from mountaincar_environment import MountainCarEnvironment
 
 environment_dict = {
     "Blackjack-v1": BlackjackEnvironment,
     "Taxi-v3": TaxiEnvironment,
-    "CliffWalking-v0": CliffWalkingEnvironment
+    "CliffWalking-v0": CliffWalkingEnvironment,
+    "FrozenLake-v1": FrozenLakeEnvironment,
+    "MountainCar-v0": MountainCarEnvironment
 }
 
 if __name__ == "__main__":
@@ -22,6 +26,7 @@ if __name__ == "__main__":
     parser.add_argument("--decay_rate", type=float, default=0.0001, help="Decay rate")
     parser.add_argument("--learning_rate", type=float, default=0.7, help="Learning rate (alpha)")
     parser.add_argument("--gamma", type=float, default=0.618, help="Discount factor (gamma)")
+    parser.add_argument("--is_slippery", action="store_true", help="Set environment to be slippery")
     args = parser.parse_args()
 
     num_episodes = args.num_episodes
@@ -30,7 +35,10 @@ if __name__ == "__main__":
     learning_rate = args.learning_rate
     gamma = args.gamma
 
-    env = gym.make(env_name).env
+    if env_name == "FrozenLake-v1":
+        env = gym.make(env_name, is_slippery=args.is_slippery).env
+    else:
+        env = gym.make(env_name).env
 
     env = environment_dict[env_name](env)
 

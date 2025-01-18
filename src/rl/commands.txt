@@ -7,5 +7,15 @@ python lql_test.py --num_episodes 200 --env_name Taxi-v3
 python .\tql_train.py --env_name Blackjack-v1 --num_episodes 30000 --decay_rate 0.00005 --learning_rate 0.05 --gamma 0.5
 python .\tql_test.py --env_name Blackjack-v1
 
-python .\tql_train.py --env_name CliffWalking-v0 --num_episodes 1000 --decay_rate 0.01 --learning_rate 1 --gamma 1
+python .\tql_train.py --env_name CliffWalking-v0 --num_episodes 1100 --decay_rate 1 --learning_rate 0.1 --gamma 0.5
 python .\tql_test.py --env_name CliffWalking-v0
+
+python .\tql_train.py --env_name FrozenLake-v1 --num_episodes 10000 --decay_rate 0.001 --learning_rate 0.7 --gamma 0.6 --is_slippery
+python .\tql_test.py --env_name FrozenLake-v1 --render --is_slippery
+
+python .\tql_train.py --env_name FrozenLake-v1 --num_episodes 10000 --decay_rate 0.001 --learning_rate 0.7 --gamma 0.6
+python .\tql_test.py --env_name FrozenLake-v1 --render
+
+python .\tql_train.py --env_name MountainCar-v0 --num_episodes 10000 --decay_rate 0.0002 --learning_rate 0.9 --gamma 0.6
+
+

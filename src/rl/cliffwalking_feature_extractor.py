@@ -35,6 +35,8 @@ class CliffWalkingFeatureExtractor(FeatureExtractor):
         self.features_list.append(self.f1)
         self.features_list.append(self.f2)
         self.features_list.append(self.f3)
+        self.features_list.append(self.f4)
+        self.features_list.append(self.f5)
 
     def get_num_features(self):
         '''
@@ -105,42 +107,59 @@ class CliffWalkingFeatureExtractor(FeatureExtractor):
     
     def f1(self, state, action):
         '''
-        Calcula a distância de Manhattan do agente ao objetivo.
+        Manhattan distance from the agent's position to the goal.
         '''
-        agent_position = self._get_agent_position(state)
-        if agent_position in Layout.cliff:
-            return 0
-        distance_to_goal = self.__manhattanDistance(agent_position, Layout.goal)
-        return 1.0 / (distance_to_goal + 1)
+        agent_pos = self._get_agent_position(state)
+        return self.__manhattanDistance(agent_pos, Layout.goal)
     
     def f2(self, state, action):
         '''
-        Calculo a distância de Manhattan do agente ao penhasco.
+        Returns 1 if the agent is adjacent to the cliff, 0 otherwise.
         '''
-        agent_position = self._get_agent_position(state)
-        distance_to_cliff = min([self.__manhattanDistance(agent_position, cliff) for cliff in Layout.cliff])
-        return distance_to_cliff + 1    
+        agent_pos = self._get_agent_position(state)
+        for cliff_cell in Layout.cliff:
+            if self.__manhattanDistance(agent_pos, cliff_cell) == 1:
+                return 1.0
+        return 0.0
     
     def f3(self, state, action):
         '''
-        Verifica se o agente está adjacente a um buraco.
+        Returns 1 if the action moves the agent closer to the goal, 0 otherwise.
         '''
-        agent_position = self._get_agent_position(state)
-        adjacent_positions = [
-            (agent_position[0] - 1, agent_position[1]),
-            (agent_position[0] + 1, agent_position[1]),
-            (agent_position[0], agent_position[1] - 1),
-            (agent_position[0], agent_position[1] + 1)
-        ]
+        agent_pos = self._get_agent_position(state)
+        next_pos = agent_pos.copy()
         
-        return int(any(pos in Layout.cliff for pos in adjacent_positions))
-
+        if action == Actions.LEFT:
+            next_pos[1] = max(Layout.column_min, agent_pos[1] - 1)
+        elif action == Actions.RIGHT:
+            next_pos[1] = min(Layout.column_max, agent_pos[1] + 1)
+        elif action == Actions.UP:
+            next_pos[0] = max(Layout.row_min, agent_pos[0] - 1)
+        elif action == Actions.DOWN:
+            next_pos[0] = min(Layout.row_max, agent_pos[0] + 1)
+        
+        current_distance = self.__manhattanDistance(agent_pos, Layout.goal)
+        next_distance = self.__manhattanDistance(next_pos, Layout.goal)
+        return 1.0 if next_distance < current_distance else 0.0
+    
     def f4(self, state, action):
         '''
-        Não deixa o agente ir muito longe do objetivo no eixo y.
+        Manhattan distance to the nearest cliff cell.
         '''
-        agent_position = self._get_agent_position(state)
-        distance_y_axis = abs(agent_position[0] - Layout.goal[0])
-        return 1.0 / (distance_y_axis + 1)
+        agent_pos = self._get_agent_position(state)
+        return min(self.__manhattanDistance(agent_pos, cliff_cell) for cliff_cell in Layout.cliff)
     
-    
+    def f5(self, state, action):
+        '''
+        Checks if the action aligns with the row or column direction of the goal.
+        '''
+        agent_pos = self._get_agent_position(state)
+        if action == Actions.LEFT and Layout.goal[1] < agent_pos[1]:
+            return 1.0
+        elif action == Actions.RIGHT and Layout.goal[1] > agent_pos[1]:
+            return 1.0
+        elif action == Actions.UP and Layout.goal[0] < agent_pos[0]:
+            return 1.0
+        elif action == Actions.DOWN and Layout.goal[0] > agent_pos[0]:
+            return 1.0
+        return 0.0
