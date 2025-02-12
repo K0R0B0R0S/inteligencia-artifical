@@ -10,7 +10,7 @@ class Actions:
 class Layout:
     goal = [3, 3]
     start = [0, 0]
-    hole = [[1,1], [1,3], [2,3], [3,1]]
+    hole = [[3,0], [1,1], [1,3], [2,3]]
     column_min = 0
     column_max = 3
     row_min = 0
@@ -26,7 +26,7 @@ class FrozenLakeFeatureExtractor(FeatureExtractor):
     
     def __init__(self, env):
         '''
-        Initializes the CliffWalkingFeatureExtractor object. 
+        Initializes the FrozenLakeFeatureExtractor object. 
         It adds feature extraction methods to the features_list attribute.
         '''
         self.env = env
@@ -34,9 +34,11 @@ class FrozenLakeFeatureExtractor(FeatureExtractor):
         self.features_list.append(self.f0)
         self.features_list.append(self.f1)
         self.features_list.append(self.f2)
-        self.features_list.append(self.f3)
-        self.features_list.append(self.f4)
-        self.features_list.append(self.f5)
+        self.features_list.append(self.f3)  
+        self.features_list.append(self.f4)  
+        self.features_list.append(self.f_penalty_for_loop)
+        self.features_list.append(self.f_is_next_position_hole)
+
 
     def get_num_features(self):
         '''
@@ -58,12 +60,19 @@ class FrozenLakeFeatureExtractor(FeatureExtractor):
     
     def is_terminal_state(self, state):
         '''
-        Checks if the state is terminal (either goal or cliff).
+        Verifica se o estado é terminal.
+        Um estado terminal só é considerado um sucesso se o agente alcançar o objetivo (não cair no buraco).
         '''
-        column, row = state % 4, state // 4
-        is_goal = [row, column] == Layout.goal
-        is_hole = [row, column] in Layout.hole
-        return is_goal or is_hole
+        goal_state = Layout.goal[0] * 4 + Layout.goal[1]
+        hole_states = [hole[0] * 4 + hole[1] for hole in Layout.hole]
+
+        if state == goal_state:
+            return True
+        
+        if state in hole_states:
+            return True
+        
+        return False
     
     def get_actions(self):
         '''
@@ -93,9 +102,16 @@ class FrozenLakeFeatureExtractor(FeatureExtractor):
         '''
         return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
     
+    @staticmethod
+    def __euclideanDistance(xy1, xy2):
+        '''
+        Computes the Euclidean distance between two points.
+        '''
+        return np.sqrt((xy1[0] - xy2[0]) ** 2 + (xy1[1] - xy2[1]) ** 2)
+    
     def _get_agent_position(self, state):
         '''
-        Gets agent's position based on a 4x12 grid.
+        Gets agent's position based on a 4x4 grid.
         '''
         return [state // 4, state % 4]
     
@@ -113,30 +129,30 @@ class FrozenLakeFeatureExtractor(FeatureExtractor):
         elif action == Actions.UP:
             row = max(Layout.row_min, row - 1)
         return [row, col]
-    
+
     def f0(self, state, action):
         '''
-        This is just the bias term.
+        Bias term.
         '''
         return 1.0
-    
+
     def f1(self, state, action):
         '''
-        Calcula a distância de Manhattan do agente ao objetivo.	
+        Distância normalizada ao objetivo.
         '''
         agent_position = self._get_agent_position(state)
-        if agent_position in Layout.hole:
-            return 0
-        distance_to_goal = self.__manhattanDistance(agent_position, Layout.goal)
-        return 1.0 / (distance_to_goal + 1)
+        goal_position = Layout.goal
+        distance = self.__euclideanDistance(agent_position, goal_position)
+        return 1 / (1 + distance)
     
     def f2(self, state, action):
         '''
-        CCalcula a distância de Manhattan do agente ao buraco mais próximo.
+        Distância normalizada ao buraco mais próximo.
         '''
         agent_position = self._get_agent_position(state)
-        distance_to_hole = min(self.__manhattanDistance(agent_position, hole) for hole in Layout.hole)
-        return 1.0 / (distance_to_hole + 1)
+        hole_positions = Layout.hole
+        distance = min([self.__euclideanDistance(agent_position, hole) for hole in hole_positions])
+        return 1 / (1 + distance)
     
     def f3(self, state, action):
         '''
@@ -158,39 +174,48 @@ class FrozenLakeFeatureExtractor(FeatureExtractor):
         '''
         agent_position = self._get_agent_position(state)
         adjacent_positions = [
-            (agent_position[0] - 1, agent_position[1]),  # Up
-            (agent_position[0] + 1, agent_position[1]),  # Down
-            (agent_position[0], agent_position[1] - 1),  # Left
-            (agent_position[0], agent_position[1] + 1)   # Right
+            (agent_position[0] - 1, agent_position[1]),
+            (agent_position[0] + 1, agent_position[1]),
+            (agent_position[0], agent_position[1] - 1),
+            (agent_position[0], agent_position[1] + 1)
         ]
         
         return int(any(pos in Layout.hole for pos in adjacent_positions))
     
-    def f5(self, state, action, is_slippery=True):
+    def f_penalty_for_loop(self, state, action):
         '''
-        Verifica a possibilidade do chão estar escorregadio.
+        Penaliza o agente se ele estiver se movendo na direção oposta ao objetivo.
+        Esta é a feature para evitar que o agente tente "dar a volta" no mapa.
         '''
         agent_position = self._get_agent_position(state)
-        row, column = agent_position
+        goal_position = Layout.goal
+
+        direction_to_goal = [goal_position[0] - agent_position[0], goal_position[1] - agent_position[1]]
+
+        action_directions = {
+            Actions.LEFT:  [-1, 0],
+            Actions.DOWN:  [0, -1],
+            Actions.RIGHT: [1, 0],
+            Actions.UP:    [0, 1]
+        }
         
-        if not is_slippery:
-            slip_probability = 0.0
-        else:
-            slip_probability = 1.0 / 3.0
-            
-        initial_effectiveness = 1.0 - slip_probability
-        slip_effectiveness = 0.0
+        action_direction = action_directions[action]
+        dot_product = direction_to_goal[0] * action_direction[0] + direction_to_goal[1] * action_direction[1]
         
-        if action in [Actions.LEFT, Actions.RIGHT]:
-            if row > Layout.row_min:
-                slip_effectiveness += slip_probability
-            if row < Layout.row_max:
-                slip_effectiveness = slip_probability
+        if dot_product < 0:
+            return -1.0
         
-        elif action in [Actions.UP, Actions.DOWN]:
-            if column > Layout.column_min:
-                slip_effectiveness += slip_probability
-            if column < Layout.column_max:
-                slip_effectiveness += slip_probability
-                
-        return initial_effectiveness + slip_effectiveness
+        return 0.0
+    
+    def f_is_next_position_hole(self, state, action):
+        '''
+        Verifica se a próxima posição do agente é um buraco.
+        Retorna 0 se a próxima posição for um buraco, caso contrário retorna 1.
+        '''
+        agent_position = self._get_agent_position(state)
+        next_position = self._get_next_position(agent_position, action)
+
+        if next_position in Layout.hole:
+            return 0
+        
+        return 1

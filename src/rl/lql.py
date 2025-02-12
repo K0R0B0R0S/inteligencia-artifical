@@ -35,8 +35,8 @@ class QLearningAgentLinear:
     
     self.steps = 0
 
-    self.epsilon = .5
-    self.max_epsilon = 0.5
+    self.epsilon = 1
+    self.max_epsilon = 1
     self.min_epsilon = 0.1
     self.epsilon_decay_rate = epsilon_decay_rate
     self.learning_rate = learning_rate
@@ -125,7 +125,6 @@ class QLearningAgentLinear:
         self.steps += 1
         action = self.choose_action(state)
         new_state, reward, terminated, truncated, _ = self.env.step(action)
-
         if reward == -10:
             total_penalties += 1
 

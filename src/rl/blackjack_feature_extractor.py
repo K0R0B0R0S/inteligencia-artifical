@@ -19,12 +19,11 @@ class BlackjackFeatureExtractor(FeatureExtractor):
 		self.env = env
 		self.features_list = []
 		self.features_list.append(self.f0)
-		self.features_list.append(self.f1_player_hand_sum)
-		self.features_list.append(self.f2_dealer_visible_card)
-		self.features_list.append(self.f3_player_aces_count)
-		self.features_list.append(self.f4_is_bust)
-		self.features_list.append(self.f5_distance_to_21)
-		self.features_list.append(self.f6_probability_bust)
+		self.features_list.append(self.f1)
+		self.features_list.append(self.f2)
+		self.features_list.append(self.f3)
+		self.features_list.append(self.f4)
+		self.features_list.append(self.f5)
 
 	def get_num_features(self):
 		'''
@@ -45,9 +44,7 @@ class BlackjackFeatureExtractor(FeatureExtractor):
 		return self.__actions_one_hot_encoding[action]
 
 	def is_terminal_state(self, state):
-		if state[2] == True:
-			return True
-		elif state[0] > 21:
+		if state[0] > 21:
 			return True
 		return False
 
@@ -77,47 +74,32 @@ class BlackjackFeatureExtractor(FeatureExtractor):
 		'''
 		return 1.0
 
-	def f1_player_hand_sum(self, state, action):
+	def f1(self, state, action):
 		'''
-		Returns the sum of the player's hand.
+		Soma das cartas do jogador.
 		'''
 		return state[0]
 
-	def f2_dealer_visible_card(self, state, action):
+	def f2(self, state, action):
 		'''
-		Returns the value of the dealer's visible card.
+		Soma das cartas do dealer.
 		'''
 		return state[1]
 
-	def f3_player_aces_count(self, state, action):
+	def f3(self, state, action):
 		'''
-		Returns 1 if the player holds a usable ace, otherwise 0.
+		Verifica se o jogador tem um Ás utilizável (11) que não faz o jogador estourar.
 		'''
-		return state[2]  # Usable ace is directly given in state[2]
+		return state[2]
 
-	def f4_is_bust(self, state, action):
+	def f4(self, state, action):
 		'''
-		Returns 1 if the player's hand sum exceeds 21, otherwise 0.
+		Diferença entre a soma das cartas do jogador e a soma da carta visível do dealer.
+		'''
+		return state[0] - state[1]
+
+	def f5(self, state, action):
+		'''
+		Indica se o jogador estourou.
 		'''
 		return 1 if state[0] > 21 else 0
-
-	def f5_distance_to_21(self, state, action):
-		'''
-		Returns the difference between the player's hand sum and 21.
-		'''
-		return max(21 - state[0], 0)
-	
-	def f6_probability_bust(self, state, action):
-		'''
-		Calculates the probability of busting if another card is drawn.
-		'''
-		player_sum = state[0]
-		cards_remaining = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # Values 2-10 and Ace (11)
-		probabilities = [1/13 for _ in cards_remaining]  # Assuming uniform deck distribution
-
-		prob_bust = 0
-		for card, prob in zip(cards_remaining, probabilities):
-			if player_sum + card > 21:
-				prob_bust += prob
-
-		return prob_bust

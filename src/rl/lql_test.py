@@ -1,6 +1,7 @@
 import argparse
 import gymnasium as gym
 from lql import QLearningAgentLinear
+from blackjack_feature_extractor import Actions
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -29,15 +30,13 @@ if __name__ == "__main__":
         truncated = False
 
         while not (terminated or truncated):
-            if args.render:
-                env_test.render()
             action = agent.policy(state)
             state, reward, terminated, truncated, info = env_test.step(action)
             num_actions += 1
 
         total_rewards += reward
         total_actions += num_actions
-
+        
     print("***Results***********************")
     print(f"Average episode length: {total_actions / args.num_episodes}")
     print(f"Average rewards: {total_rewards / args.num_episodes}")

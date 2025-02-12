@@ -47,21 +47,27 @@ if __name__ == "__main__":
     penalties_per_episode, rewards_per_episode, cumulative_successful_episodes = agent.train(num_episodes)
     agent.save(args.env_name + "-lql-agent.pkl")
 
+    plt.figure(figsize=(12, 10))
+
     plt.subplot(2, 2, 1)
     plt.plot(savgol_filter(penalties_per_episode, 111, 2))
     plt.title(f"Penalties ({args.env_name})")
+    plt.tight_layout(pad=3.0)
 
     plt.subplot(2, 2, 2)
     plt.plot(savgol_filter(rewards_per_episode, 111, 2))
     plt.title(f"Rewards ({args.env_name})")
+    plt.tight_layout(pad=3.0)
 
     plt.subplot(2, 2, 3)
     plt.plot(cumulative_successful_episodes)
     plt.title(f"Successful episodes ({args.env_name})")
+    plt.tight_layout(pad=3.0)
 
     plt.subplot(2, 2, 4)
     plt.plot(agent.epsilon_history)
     plt.title(f"Epsilon ({args.env_name})")
+    plt.tight_layout(pad=3.0)
 
     plt.savefig(args.env_name + "-lql-results.png")
     plt.close()
