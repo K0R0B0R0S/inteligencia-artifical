@@ -28,3 +28,4 @@ src/rl/__pycache__/tql.cpython-310.pyc
 src/rl/__pycache__/blackjack_environment.cpython-310.pyc
 teams files/
 venv/
+data/
